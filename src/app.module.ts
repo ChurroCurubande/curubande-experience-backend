@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { LandingPageModule } from './landing-page/landing-page.module';
 import { ContactMessagesModule } from './contact-messages/contact-messages.module';
+import { ToursModule } from './tours/tours.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ContactMessagesModule } from './contact-messages/contact-messages.modul
     UploadsModule,
     LandingPageModule,
     ContactMessagesModule,
+    ToursModule,
   ],
   controllers: [],
   providers: [
