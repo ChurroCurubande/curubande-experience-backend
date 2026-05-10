@@ -13,6 +13,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 import { CreateTourDto } from './dto/create-tour.dto';
+import { RemoveTourGalleryItemDto } from './dto/remove-tour-gallery-item.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { ToursService } from './tours.service';
 
@@ -99,6 +100,38 @@ export class ToursController {
     },
   ) {
     return this.toursService.update(+id, updateTourDto, files);
+  }
+
+  @Post(':id/gallery')
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'gallery', maxCount: 20 }]))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        gallery: { type: 'array', items: { type: 'string', format: 'binary' } },
+      },
+    },
+  })
+  addGallery(
+    @Param('id') id: string,
+    @UploadedFiles()
+    files?: {
+      gallery?: Express.Multer.File[];
+    },
+  ) {
+    return this.toursService.addGallery(+id, files?.gallery ?? []);
+  }
+
+  @Delete(':id/gallery')
+  removeGalleryItem(
+    @Param('id') id: string,
+    @Body() removeTourGalleryItemDto: RemoveTourGalleryItemDto,
+  ) {
+    return this.toursService.removeGalleryItem(
+      +id,
+      removeTourGalleryItemDto.path,
+    );
   }
 
   @Delete(':id')

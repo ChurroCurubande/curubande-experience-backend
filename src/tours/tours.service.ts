@@ -77,6 +77,46 @@ export class ToursService {
     return this.toResponse(await this.tourRepository.save(updatedTour));
   }
 
+  async addGallery(id: number, files: Express.Multer.File[]) {
+    const tour = await this.tourRepository.findOne({
+      where: { id_tour: id },
+    });
+
+    if (!tour) {
+      throw new NotFoundException('Tour no encontrado');
+    }
+
+    const gallery = [
+      ...(tour.gallery ?? []),
+      ...(await this.uploadGallery(files)),
+    ];
+
+    tour.gallery = gallery;
+
+    return this.toResponse(await this.tourRepository.save(tour));
+  }
+
+  async removeGalleryItem(id: number, path: string) {
+    const tour = await this.tourRepository.findOne({
+      where: { id_tour: id },
+    });
+
+    if (!tour) {
+      throw new NotFoundException('Tour no encontrado');
+    }
+
+    const gallery = tour.gallery ?? [];
+    const nextGallery = gallery.filter((item) => item.path !== path);
+
+    if (nextGallery.length === gallery.length) {
+      throw new NotFoundException('Archivo de galería no encontrado');
+    }
+
+    tour.gallery = nextGallery;
+
+    return this.toResponse(await this.tourRepository.save(tour));
+  }
+
   async remove(id: number) {
     const tour = await this.tourRepository.findOne({
       where: { id_tour: id },
