@@ -7,6 +7,7 @@ import { AuthGuard } from './auth/guards/auth.guard';
 import { UsersModule } from './users/users.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { LandingPageModule } from './landing-page/landing-page.module';
+import { ContactMessagesModule } from './contact-messages/contact-messages.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { LandingPageModule } from './landing-page/landing-page.module';
     AuthModule,
     UploadsModule,
     LandingPageModule,
+    ContactMessagesModule,
   ],
   controllers: [],
   providers: [
