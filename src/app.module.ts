@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { AuthGuard } from './auth/guards/auth.guard';
 import { UsersModule } from './users/users.module';
+import { UploadsModule } from './uploads/uploads.module';
+import { LandingPageModule } from './landing-page/landing-page.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { UsersModule } from './users/users.module';
     }),
     UsersModule,
     AuthModule,
+    UploadsModule,
+    LandingPageModule,
   ],
   controllers: [],
   providers: [
