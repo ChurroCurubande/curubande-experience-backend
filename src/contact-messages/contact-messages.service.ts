@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { MailService } from '../mail/mail.service';
 import { CreateContactMessageDto } from './dto/create-contact-message.dto';
 import { UpdateContactMessageDto } from './dto/update-contact-message.dto';
 import { ContactMessage } from './entities/contact-message.entity';
@@ -10,15 +11,28 @@ export class ContactMessagesService {
   constructor(
     @InjectRepository(ContactMessage)
     private readonly contactMessageRepository: Repository<ContactMessage>,
+    private readonly mailService: MailService,
   ) {}
 
-  create(createContactMessageDto: CreateContactMessageDto) {
+  async create(createContactMessageDto: CreateContactMessageDto) {
     const contactMessage = this.contactMessageRepository.create({
       ...createContactMessageDto,
       is_read: false,
     });
 
-    return this.contactMessageRepository.save(contactMessage);
+    const saved = await this.contactMessageRepository.save(contactMessage);
+
+    void this.mailService
+      .notifyContactMessageToAdmins({
+        name: saved.name,
+        email: saved.email,
+        message: saved.message,
+      })
+      .catch((err: unknown) => {
+        console.error('[Mail] aviso de contacto falló:', err);
+      });
+
+    return saved;
   }
 
   findAll() {

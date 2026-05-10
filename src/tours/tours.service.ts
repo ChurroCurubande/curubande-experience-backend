@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { MailService } from '../mail/mail.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
@@ -24,6 +25,7 @@ export class ToursService {
     @InjectRepository(TourReservation)
     private readonly tourReservationRepository: Repository<TourReservation>,
     private readonly uploadsService: UploadsService,
+    private readonly mailService: MailService,
   ) {}
 
   async create(createTourDto: CreateTourDto, files?: TourFiles) {
@@ -76,11 +78,11 @@ export class ToursService {
   }
 
   async createReservation(tourId: number, dto: CreateTourReservationDto) {
-    const exists = await this.tourRepository.exist({
+    const tour = await this.tourRepository.findOne({
       where: { id_tour: tourId },
     });
 
-    if (!exists) {
+    if (!tour) {
       throw new NotFoundException('Tour no encontrado');
     }
 
@@ -92,7 +94,21 @@ export class ToursService {
       reservation_date: dto.date.slice(0, 10),
     });
 
-    return this.tourReservationRepository.save(reservation);
+    const saved = await this.tourReservationRepository.save(reservation);
+
+    void this.mailService
+      .sendTourReservationEmails({
+        customerName: dto.name,
+        customerEmail: dto.email,
+        phone: dto.phone,
+        tourName: tour.name,
+        reservationDate: dto.date,
+      })
+      .catch((err: unknown) => {
+        console.error('[Mail] aviso de reserva falló:', err);
+      });
+
+    return saved;
   }
 
   async getClickStats() {

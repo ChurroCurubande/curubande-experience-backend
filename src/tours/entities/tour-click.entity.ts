@@ -1,6 +1,7 @@
 import {
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -8,6 +9,8 @@ import {
 import { Tour } from './tour.entity';
 
 @Entity('tour_clicks')
+@Index(['tour'])
+@Index(['clicked_at'])
 export class TourClick {
   @PrimaryGeneratedColumn({ name: 'id_click' })
   id_click: number;

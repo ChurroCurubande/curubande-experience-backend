@@ -9,6 +9,7 @@ import { UploadsModule } from './uploads/uploads.module';
 import { LandingPageModule } from './landing-page/landing-page.module';
 import { ContactMessagesModule } from './contact-messages/contact-messages.module';
 import { ToursModule } from './tours/tours.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { ToursModule } from './tours/tours.module';
     LandingPageModule,
     ContactMessagesModule,
     ToursModule,
+    MailModule,
   ],
   controllers: [],
   providers: [
