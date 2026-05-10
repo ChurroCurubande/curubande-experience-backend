@@ -8,6 +8,9 @@ const ALLOWED_MIMES = [
   'image/jpeg',
   'image/png',
   'image/webp',
+  'video/mp4',
+  'video/quicktime',
+  'video/webm',
 ];
 
 @Injectable()
@@ -53,7 +56,7 @@ export class UploadsService {
   ): Promise<string> {
     if (!ALLOWED_MIMES.includes(mimeType)) {
       throw new InternalServerErrorException(
-        `Tipo de archivo no permitido. Permitidos: PDF, JPEG, PNG, WebP.`,
+        `Tipo de archivo no permitido. Permitidos: PDF, JPEG, PNG, WebP, MP4, MOV, WebM.`,
       );
     }
     if (fileBuffer.length > MAX_FILE_SIZE) {
@@ -94,6 +97,9 @@ export class UploadsService {
       'image/jpeg': '.jpg',
       'image/png': '.png',
       'image/webp': '.webp',
+      'video/mp4': '.mp4',
+      'video/quicktime': '.mov',
+      'video/webm': '.webm',
     };
     if (fromMime[mimeType]) return fromMime[mimeType];
     const match = filename.match(/\.[a-zA-Z0-9]+$/);

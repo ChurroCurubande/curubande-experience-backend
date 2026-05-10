@@ -48,6 +48,16 @@ export class CreateTourDto {
   @ApiProperty({ example: 'Catarata La Leona' })
   name: string;
 
+  @IsNotEmpty({ message: 'La descripción del tour es obligatoria' })
+  @Length(10, 3000, {
+    message: 'La descripción debe tener entre 10 y 3000 caracteres',
+  })
+  @Transform(({ value }) => trimString(value))
+  @ApiProperty({
+    example: 'Una aventura entre senderos, cañones y agua turquesa.',
+  })
+  description: string;
+
   @IsArray({ message: 'Las actividades deben ser una lista' })
   @ArrayNotEmpty({ message: 'Agrega al menos una actividad' })
   @IsString({ each: true, message: 'Cada actividad debe ser texto' })

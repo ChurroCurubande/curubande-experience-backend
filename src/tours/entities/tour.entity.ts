@@ -6,6 +6,13 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export type TourGalleryItem = {
+  path: string;
+  type: 'image' | 'video';
+  mime_type: string;
+  original_name: string;
+};
+
 @Entity('tours')
 export class Tour {
   @PrimaryGeneratedColumn({ name: 'id_tour' })
@@ -13,6 +20,9 @@ export class Tour {
 
   @Column({ type: 'varchar', length: 120, nullable: false })
   name: string;
+
+  @Column({ type: 'text', nullable: false, default: '' })
+  description: string;
 
   @Column({ type: 'jsonb', default: [] })
   activities: string[];
@@ -30,6 +40,9 @@ export class Tour {
     nullable: true,
   })
   preview_image_path: string | null;
+
+  @Column({ type: 'jsonb', default: [] })
+  gallery: TourGalleryItem[];
 
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
