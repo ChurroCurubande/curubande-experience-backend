@@ -31,7 +31,7 @@ export class AuthService {
     const isValid = await bcrypt.compare(dto.password, user.password);
 
     if (!isValid) {
-      throw new UnauthorizedException('Contrasena incorrecta');
+      throw new UnauthorizedException('Contraseña incorrecta');
     }
 
     const payload = {
@@ -73,7 +73,7 @@ export class AuthService {
 
       return { access_token };
     } catch {
-      throw new UnauthorizedException('Refresh token invalido o expirado');
+      throw new UnauthorizedException('Token de refresco inválido o expirado');
     }
   }
 

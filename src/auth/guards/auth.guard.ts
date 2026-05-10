@@ -47,7 +47,7 @@ export class AuthGuard implements CanActivate {
       const refreshed = await this.tryAutoRefresh(request, response);
 
       if (!refreshed) {
-        throw new UnauthorizedException('no token provided');
+        throw new UnauthorizedException('No se proporcionó un token');
       }
 
       return true;
@@ -64,7 +64,7 @@ export class AuthGuard implements CanActivate {
       const refreshed = await this.tryAutoRefresh(request, response);
 
       if (!refreshed) {
-        throw new UnauthorizedException('invalid token');
+        throw new UnauthorizedException('Token inválido');
       }
     }
 

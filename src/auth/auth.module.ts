@@ -23,7 +23,7 @@ import { JwtStrategy } from './jwt.strategy';
 
         if (!secret) {
           throw new Error(
-            'JWT_SECRET no esta definido en las variables de entorno',
+            'JWT_SECRET no está definido en las variables de entorno',
           );
         }
 

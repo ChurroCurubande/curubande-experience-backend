@@ -17,7 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!secret) {
       throw new Error(
-        'JWT_SECRET no esta definido en las variables de entorno',
+        'JWT_SECRET no está definido en las variables de entorno',
       );
     }
 

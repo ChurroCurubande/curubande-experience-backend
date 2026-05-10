@@ -49,7 +49,7 @@ export class AuthController {
       getCookieOptions(1000 * 60 * 60 * 24 * 90),
     );
 
-    return { message: 'Login successful', access_token };
+    return { message: 'Inicio de sesión exitoso', access_token };
   }
 
   @ApiCookieAuth('access_token')
@@ -67,7 +67,7 @@ export class AuthController {
     const refreshToken = req.cookies?.refresh_token as string | undefined;
 
     if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token no encontrado');
+      throw new UnauthorizedException('Token de refresco no encontrado');
     }
 
     const { access_token } = await this.authService.refreshToken(refreshToken);
@@ -78,7 +78,7 @@ export class AuthController {
       getCookieOptions(1000 * 60 * 60 * 24 * 7),
     );
 
-    return { message: 'Token refreshed successfully' };
+    return { message: 'Token actualizado correctamente' };
   }
 
   @Public()
@@ -95,6 +95,6 @@ export class AuthController {
     res.clearCookie('access_token', cookieOptions);
     res.clearCookie('refresh_token', cookieOptions);
 
-    return { message: 'Logout successful' };
+    return { message: 'Cierre de sesión exitoso' };
   }
 }

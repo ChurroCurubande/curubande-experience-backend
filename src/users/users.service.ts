@@ -90,7 +90,7 @@ export class UsersService {
       });
 
       if (existingEmail && existingEmail.id_user !== ignoreId) {
-        throw new ConflictException('El correo electronico ya esta en uso');
+        throw new ConflictException('El correo electrónico ya está en uso');
       }
     }
 
@@ -100,7 +100,7 @@ export class UsersService {
       });
 
       if (existingUsername && existingUsername.id_user !== ignoreId) {
-        throw new ConflictException('El nombre de usuario ya esta en uso');
+        throw new ConflictException('El nombre de usuario ya está en uso');
       }
     }
   }
