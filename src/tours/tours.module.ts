@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { TourClick } from './entities/tour-click.entity';
+import { TourReservation } from './entities/tour-reservation.entity';
 import { Tour } from './entities/tour.entity';
 import { ToursController } from './tours.controller';
 import { ToursService } from './tours.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tour])],
+  imports: [TypeOrmModule.forFeature([Tour, TourClick, TourReservation])],
   controllers: [ToursController],
   providers: [ToursService],
 })

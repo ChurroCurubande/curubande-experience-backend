@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { UploadsService } from '../uploads/uploads.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
+import { CreateTourReservationDto } from './dto/create-tour-reservation.dto';
+import { TourClick } from './entities/tour-click.entity';
+import { TourReservation } from './entities/tour-reservation.entity';
 import { Tour, TourGalleryItem } from './entities/tour.entity';
 
 type TourFiles = {
@@ -16,6 +19,10 @@ export class ToursService {
   constructor(
     @InjectRepository(Tour)
     private readonly tourRepository: Repository<Tour>,
+    @InjectRepository(TourClick)
+    private readonly tourClickRepository: Repository<TourClick>,
+    @InjectRepository(TourReservation)
+    private readonly tourReservationRepository: Repository<TourReservation>,
     private readonly uploadsService: UploadsService,
   ) {}
 
@@ -50,6 +57,82 @@ export class ToursService {
     }
 
     return this.toResponse(tour);
+  }
+
+  async recordClick(tourId: number) {
+    const exists = await this.tourRepository.exist({
+      where: { id_tour: tourId },
+    });
+
+    if (!exists) {
+      throw new NotFoundException('Tour no encontrado');
+    }
+
+    await this.tourClickRepository.save({
+      tour: { id_tour: tourId } as Tour,
+    });
+
+    return { recorded: true as const };
+  }
+
+  async createReservation(tourId: number, dto: CreateTourReservationDto) {
+    const exists = await this.tourRepository.exist({
+      where: { id_tour: tourId },
+    });
+
+    if (!exists) {
+      throw new NotFoundException('Tour no encontrado');
+    }
+
+    const reservation = this.tourReservationRepository.create({
+      tour: { id_tour: tourId } as Tour,
+      name: dto.name,
+      email: dto.email,
+      phone: dto.phone,
+      reservation_date: dto.date.slice(0, 10),
+    });
+
+    return this.tourReservationRepository.save(reservation);
+  }
+
+  async getClickStats() {
+    const total_clicks = await this.tourClickRepository.count();
+
+    const topToursRaw = await this.tourClickRepository
+      .createQueryBuilder('c')
+      .innerJoin('tours', 't', 't.id_tour = c.tour_id')
+      .select('t.id_tour', 'tour_id')
+      .addSelect('t.name', 'name')
+      .addSelect('COUNT(*)', 'clicks')
+      .groupBy('t.id_tour')
+      .addGroupBy('t.name')
+      .orderBy('clicks', 'DESC')
+      .addOrderBy('t.name', 'ASC')
+      .limit(15)
+      .getRawMany<{ tour_id: string; name: string; clicks: string }>();
+
+    const topDaysRaw = await this.tourClickRepository
+      .createQueryBuilder('c')
+      .select("to_char((c.clicked_at AT TIME ZONE 'UTC')::date, 'YYYY-MM-DD')", 'date')
+      .addSelect('COUNT(*)', 'clicks')
+      .groupBy("(c.clicked_at AT TIME ZONE 'UTC')::date")
+      .orderBy('clicks', 'DESC')
+      .addOrderBy('date', 'DESC')
+      .limit(30)
+      .getRawMany<{ date: string; clicks: string }>();
+
+    return {
+      total_clicks,
+      top_tours: topToursRaw.map((row) => ({
+        tour_id: Number(row.tour_id),
+        name: row.name,
+        clicks: Number(row.clicks),
+      })),
+      top_days: topDaysRaw.map((row) => ({
+        date: row.date,
+        clicks: Number(row.clicks),
+      })),
+    };
   }
 
   async update(id: number, updateTourDto: UpdateTourDto, files?: TourFiles) {

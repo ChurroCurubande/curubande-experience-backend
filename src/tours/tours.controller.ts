@@ -13,6 +13,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 import { CreateTourDto } from './dto/create-tour.dto';
+import { CreateTourReservationDto } from './dto/create-tour-reservation.dto';
 import { RemoveTourGalleryItemDto } from './dto/remove-tour-gallery-item.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { ToursService } from './tours.service';
@@ -57,9 +58,29 @@ export class ToursController {
   }
 
   @Public()
+  @Post(':id/click')
+  recordClick(@Param('id') id: string) {
+    return this.toursService.recordClick(+id);
+  }
+
+  @Public()
+  @Post(':id/reservations')
+  createReservation(
+    @Param('id') id: string,
+    @Body() createTourReservationDto: CreateTourReservationDto,
+  ) {
+    return this.toursService.createReservation(+id, createTourReservationDto);
+  }
+
+  @Public()
   @Get()
   findAll() {
     return this.toursService.findAll();
+  }
+
+  @Get('stats/clicks')
+  getClickStats() {
+    return this.toursService.getClickStats();
   }
 
   @Public()
