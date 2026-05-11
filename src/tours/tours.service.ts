@@ -9,7 +9,6 @@ import { UploadsService } from '../uploads/uploads.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { CreateTourReservationDto } from './dto/create-tour-reservation.dto';
-import { ConfirmTourReservationAttendanceDto } from './dto/confirm-tour-reservation-attendance.dto';
 import { UpdateTourReservationStatusDto } from './dto/update-tour-reservation-status.dto';
 import { TourClick } from './entities/tour-click.entity';
 import { TourReservation } from './entities/tour-reservation.entity';
@@ -149,9 +148,9 @@ export class ToursService {
     return this.mapReservationListItem(row);
   }
 
-  async confirmAttendanceByToken(dto: ConfirmTourReservationAttendanceDto) {
+  async confirmAttendanceByToken(token: string) {
     const row = await this.tourReservationRepository.findOne({
-      where: { confirmation_token: dto.token },
+      where: { confirmation_token: token },
       relations: ['tour'],
     });
 
@@ -365,9 +364,10 @@ export class ToursService {
 
   private buildAttendanceConfirmUrl(token: string): string {
     const base = (
-      this.config.get<string>('PUBLIC_APP_URL') ?? 'http://localhost:3001'
+      this.config.get<string>('BACKEND_URL') ??
+      'http://localhost:3000'
     ).replace(/\/$/, '');
-    return `${base}/reserva/confirmar?token=${encodeURIComponent(token)}`;
+    return `${base}/tours/reservations/confirm-attendance?token=${encodeURIComponent(token)}`;
   }
 
   private mapReservationListItem(r: TourReservation) {
