@@ -111,6 +111,36 @@ export class ToursService {
     return saved;
   }
 
+  async findAllReservations() {
+    const rows = await this.tourReservationRepository.find({
+      relations: ['tour'],
+      order: { reservation_date: 'ASC', created_at: 'DESC' },
+    });
+
+    return rows.map((r) => {
+      const dateVal = r.reservation_date as unknown;
+      const reservation_date =
+        typeof dateVal === 'string'
+          ? dateVal.slice(0, 10)
+          : dateVal instanceof Date
+            ? dateVal.toISOString().slice(0, 10)
+            : String(dateVal).slice(0, 10);
+
+      const tour = r.tour;
+
+      return {
+        id_reservation: r.id_reservation,
+        id_tour: tour?.id_tour ?? 0,
+        tour_name: tour?.name ?? 'Tour no disponible',
+        name: r.name,
+        email: r.email,
+        phone: r.phone,
+        reservation_date,
+        created_at: r.created_at,
+      };
+    });
+  }
+
   async getClickStats() {
     const total_clicks = await this.tourClickRepository.count();
 

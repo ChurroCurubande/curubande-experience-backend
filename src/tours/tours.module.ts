@@ -5,6 +5,7 @@ import { TourClick } from './entities/tour-click.entity';
 import { TourReservation } from './entities/tour-reservation.entity';
 import { Tour } from './entities/tour.entity';
 import { ToursController } from './tours.controller';
+import { ToursReservationsController } from './tours-reservations.controller';
 import { ToursService } from './tours.service';
 
 @Module({
@@ -12,7 +13,7 @@ import { ToursService } from './tours.service';
     TypeOrmModule.forFeature([Tour, TourClick, TourReservation]),
     MailModule,
   ],
-  controllers: [ToursController],
+  controllers: [ToursReservationsController, ToursController],
   providers: [ToursService],
 })
 export class ToursModule {}
