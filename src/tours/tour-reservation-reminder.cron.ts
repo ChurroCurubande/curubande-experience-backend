@@ -26,4 +26,5 @@ export class TourReservationReminderCron {
       this.logger.error('Fallo el cron de recordatorios de reserva', err);
     }
   }
+  
 }

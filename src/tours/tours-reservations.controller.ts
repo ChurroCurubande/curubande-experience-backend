@@ -7,7 +7,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 import { ConfirmTourReservationAttendanceDto } from './dto/confirm-tour-reservation-attendance.dto';
 import { UpdateTourReservationStatusDto } from './dto/update-tour-reservation-status.dto';
@@ -32,6 +32,22 @@ export class ToursReservationsController {
   @Post('reservations/confirm-attendance')
   confirmAttendance(@Body() dto: ConfirmTourReservationAttendanceDto) {
     return this.toursService.confirmAttendanceByToken(dto);
+  }
+
+  /**
+   * Dispara el mismo envío que el cron de mediodía: correos de confirmación de asistencia
+   * para reservas con fecha = mañana (zona configurada), pendientes y sin recordatorio previo.
+   */
+  @Post('reservations/attendance-reminders/run')
+  @ApiOperation({
+    summary: 'Ejecutar recordatorios de asistencia manualmente',
+    description:
+      'Equivalente al job diario: envía los correos pendientes para mañana. Requiere autenticación.',
+  })
+  runAttendanceReminders() {
+    return this.toursService.sendAttendanceRemindersForTomorrow().then((sent) => ({
+      sent,
+    }));
   }
 
   @Patch('reservations/:reservationId')
