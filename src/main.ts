@@ -14,6 +14,9 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://localhost:3001',
       'http://192.168.100.26:3001',
+      'https://guanacastelifestyle.com',
+      'https://www.guanacastelifestyle.com',
+      
     ],
     credentials: true,
   });

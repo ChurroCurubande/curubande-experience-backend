@@ -10,6 +10,8 @@ import {
   getTestMailText,
   getTourReservationAdminHtml,
   getTourReservationAdminText,
+  getTourReservationAttendanceConfirmationHtml,
+  getTourReservationAttendanceConfirmationText,
   getTourReservationCustomerHtml,
   getTourReservationCustomerText,
 } from './templates/tour-reservation.templates';
@@ -193,5 +195,34 @@ export class MailService {
         }),
       });
     }
+  }
+
+  async sendTourReservationAttendanceConfirmation(params: {
+    customerName: string;
+    customerEmail: string;
+    tourName: string;
+    reservationDate: string;
+    confirmUrl: string;
+  }) {
+    const dateLabel = params.reservationDate.slice(0, 10);
+
+    await this.sendEmail({
+      to: [{ email: params.customerEmail, name: params.customerName }],
+      subject: `Confirma tu asistencia - ${params.tourName} (${dateLabel})`,
+      htmlContent: getTourReservationAttendanceConfirmationHtml({
+        customerName: params.customerName,
+        tourName: params.tourName,
+        date: dateLabel,
+        confirmUrl: params.confirmUrl,
+        senderName: this.senderName,
+      }),
+      textContent: getTourReservationAttendanceConfirmationText({
+        customerName: params.customerName,
+        tourName: params.tourName,
+        date: dateLabel,
+        confirmUrl: params.confirmUrl,
+        senderName: this.senderName,
+      }),
+    });
   }
 }

@@ -6,6 +6,7 @@ import { TourReservation } from './entities/tour-reservation.entity';
 import { Tour } from './entities/tour.entity';
 import { ToursController } from './tours.controller';
 import { ToursReservationsController } from './tours-reservations.controller';
+import { TourReservationReminderCron } from './tour-reservation-reminder.cron';
 import { ToursService } from './tours.service';
 
 @Module({
@@ -14,6 +15,6 @@ import { ToursService } from './tours.service';
     MailModule,
   ],
   controllers: [ToursReservationsController, ToursController],
-  providers: [ToursService],
+  providers: [ToursService, TourReservationReminderCron],
 })
 export class ToursModule {}

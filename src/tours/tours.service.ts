@@ -1,4 +1,7 @@
+import { randomUUID } from 'node:crypto';
+
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MailService } from '../mail/mail.service';
@@ -6,9 +9,12 @@ import { UploadsService } from '../uploads/uploads.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { CreateTourReservationDto } from './dto/create-tour-reservation.dto';
+import { ConfirmTourReservationAttendanceDto } from './dto/confirm-tour-reservation-attendance.dto';
+import { UpdateTourReservationStatusDto } from './dto/update-tour-reservation-status.dto';
 import { TourClick } from './entities/tour-click.entity';
 import { TourReservation } from './entities/tour-reservation.entity';
 import { Tour, TourGalleryItem } from './entities/tour.entity';
+import { addCalendarDaysToYmd, formatYmdInTimeZone } from './utils/reservation-date.utils';
 
 type TourFiles = {
   file?: Express.Multer.File[];
@@ -26,6 +32,7 @@ export class ToursService {
     private readonly tourReservationRepository: Repository<TourReservation>,
     private readonly uploadsService: UploadsService,
     private readonly mailService: MailService,
+    private readonly config: ConfigService,
   ) {}
 
   async create(createTourDto: CreateTourDto, files?: TourFiles) {
@@ -92,6 +99,9 @@ export class ToursService {
       email: dto.email,
       phone: dto.phone,
       reservation_date: dto.date.slice(0, 10),
+      status: 'pending',
+      confirmation_token: randomUUID(),
+      attendance_reminder_sent_at: null,
     });
 
     const saved = await this.tourReservationRepository.save(reservation);
@@ -108,7 +118,7 @@ export class ToursService {
         console.error('[Mail] aviso de reserva falló:', err);
       });
 
-    return saved;
+    return this.mapReservationPublic(saved, tourId, tour.name);
   }
 
   async findAllReservations() {
@@ -117,28 +127,110 @@ export class ToursService {
       order: { reservation_date: 'ASC', created_at: 'DESC' },
     });
 
-    return rows.map((r) => {
-      const dateVal = r.reservation_date as unknown;
-      const reservation_date =
-        typeof dateVal === 'string'
-          ? dateVal.slice(0, 10)
-          : dateVal instanceof Date
-            ? dateVal.toISOString().slice(0, 10)
-            : String(dateVal).slice(0, 10);
+    return rows.map((r) => this.mapReservationListItem(r));
+  }
 
-      const tour = r.tour;
-
-      return {
-        id_reservation: r.id_reservation,
-        id_tour: tour?.id_tour ?? 0,
-        tour_name: tour?.name ?? 'Tour no disponible',
-        name: r.name,
-        email: r.email,
-        phone: r.phone,
-        reservation_date,
-        created_at: r.created_at,
-      };
+  async updateReservationStatus(
+    reservationId: number,
+    dto: UpdateTourReservationStatusDto,
+  ) {
+    const row = await this.tourReservationRepository.findOne({
+      where: { id_reservation: reservationId },
+      relations: ['tour'],
     });
+
+    if (!row) {
+      throw new NotFoundException('Reservación no encontrada');
+    }
+
+    row.status = dto.status;
+    await this.tourReservationRepository.save(row);
+
+    return this.mapReservationListItem(row);
+  }
+
+  async confirmAttendanceByToken(dto: ConfirmTourReservationAttendanceDto) {
+    const row = await this.tourReservationRepository.findOne({
+      where: { confirmation_token: dto.token },
+      relations: ['tour'],
+    });
+
+    if (!row) {
+      throw new NotFoundException('Enlace inválido o ya no es válido');
+    }
+
+    if (row.status === 'confirmed') {
+      return {
+        ok: true as const,
+        message: 'Esta reserva ya estaba confirmada.',
+      };
+    }
+
+    row.status = 'confirmed';
+    await this.tourReservationRepository.save(row);
+
+    return {
+      ok: true as const,
+      message: 'Gracias, hemos registrado tu asistencia.',
+    };
+  }
+
+  /**
+   * Invocado por el cron diario a mediodía: reservas con fecha = mañana (zona CR u otra),
+   * estado pendiente o cliente contactado, sin recordatorio enviado aún.
+   */
+  async sendAttendanceRemindersForTomorrow(): Promise<number> {
+    const tz =
+      this.config.get<string>('RESERVATION_REMINDER_TIMEZONE') ??
+      'America/Costa_Rica';
+    const todayYmd = formatYmdInTimeZone(new Date(), tz);
+    const tomorrowYmd = addCalendarDaysToYmd(todayYmd, 1);
+
+    const rows = await this.tourReservationRepository
+      .createQueryBuilder('r')
+      .leftJoinAndSelect('r.tour', 'tour')
+      .where('r.reservation_date = :target', { target: tomorrowYmd })
+      .andWhere('r.status IN (:...allowed)', {
+        allowed: ['pending', 'client_contacted'],
+      })
+      .andWhere('r.attendance_reminder_sent_at IS NULL')
+      .getMany();
+
+    let sent = 0;
+
+    for (const row of rows) {
+      try {
+        if (!row.confirmation_token) {
+          row.confirmation_token = randomUUID();
+          await this.tourReservationRepository.save(row);
+        }
+
+        const tourName = row.tour?.name ?? 'Tour';
+        const confirmUrl = this.buildAttendanceConfirmUrl(row.confirmation_token);
+        const reservationDate = this.normalizeReservationDateValue(
+          row.reservation_date,
+        );
+
+        await this.mailService.sendTourReservationAttendanceConfirmation({
+          customerName: row.name,
+          customerEmail: row.email,
+          tourName,
+          reservationDate,
+          confirmUrl,
+        });
+
+        row.attendance_reminder_sent_at = new Date();
+        await this.tourReservationRepository.save(row);
+        sent += 1;
+      } catch (err: unknown) {
+        console.error(
+          `[Reserva ${row.id_reservation}] error enviando recordatorio de asistencia:`,
+          err,
+        );
+      }
+    }
+
+    return sent;
   }
 
   async getClickStats() {
@@ -258,6 +350,66 @@ export class ToursService {
     await this.tourRepository.remove(tour);
 
     return { message: 'Tour eliminado correctamente' };
+  }
+
+  private normalizeReservationDateValue(value: string | Date): string {
+    const dateVal = value as unknown;
+    if (typeof dateVal === 'string') {
+      return dateVal.slice(0, 10);
+    }
+    if (dateVal instanceof Date) {
+      return dateVal.toISOString().slice(0, 10);
+    }
+    return String(dateVal).slice(0, 10);
+  }
+
+  private buildAttendanceConfirmUrl(token: string): string {
+    const base = (
+      this.config.get<string>('PUBLIC_APP_URL') ?? 'http://localhost:3001'
+    ).replace(/\/$/, '');
+    return `${base}/reserva/confirmar?token=${encodeURIComponent(token)}`;
+  }
+
+  private mapReservationListItem(r: TourReservation) {
+    const reservation_date = this.normalizeReservationDateValue(
+      r.reservation_date,
+    );
+    const tour = r.tour;
+
+    return {
+      id_reservation: r.id_reservation,
+      id_tour: tour?.id_tour ?? 0,
+      tour_name: tour?.name ?? 'Tour no disponible',
+      name: r.name,
+      email: r.email,
+      phone: r.phone,
+      reservation_date,
+      created_at: r.created_at,
+      status: r.status,
+      attendance_reminder_sent_at: r.attendance_reminder_sent_at,
+    };
+  }
+
+  private mapReservationPublic(
+    r: TourReservation,
+    id_tour: number,
+    tour_name: string,
+  ) {
+    const reservation_date = this.normalizeReservationDateValue(
+      r.reservation_date,
+    );
+
+    return {
+      id_reservation: r.id_reservation,
+      id_tour,
+      tour_name,
+      name: r.name,
+      email: r.email,
+      phone: r.phone,
+      reservation_date,
+      created_at: r.created_at,
+      status: r.status,
+    };
   }
 
   private toResponse(tour: Tour) {

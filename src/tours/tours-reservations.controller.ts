@@ -1,11 +1,21 @@
-import { Controller, Get } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
+import { ConfirmTourReservationAttendanceDto } from './dto/confirm-tour-reservation-attendance.dto';
+import { UpdateTourReservationStatusDto } from './dto/update-tour-reservation-status.dto';
 import { ToursService } from './tours.service';
 
 /**
- * Rutas de listado de reservas en un controlador aparte y registrado antes que
- * {@link ToursController}, para que Express/Nest no enrute `/tours/reservations`
- * hacia `GET /tours/:id` (id = "reservations").
+ * Rutas de reservas bajo `/tours/...`. El listado vive en un controlador aparte
+ * registrado antes que {@link ToursController} para evitar colisiones con `/:id`.
  */
 @ApiTags('tours')
 @ApiCookieAuth('access_token')
@@ -16,5 +26,19 @@ export class ToursReservationsController {
   @Get('reservations')
   findAllReservations() {
     return this.toursService.findAllReservations();
+  }
+
+  @Public()
+  @Post('reservations/confirm-attendance')
+  confirmAttendance(@Body() dto: ConfirmTourReservationAttendanceDto) {
+    return this.toursService.confirmAttendanceByToken(dto);
+  }
+
+  @Patch('reservations/:reservationId')
+  updateReservationStatus(
+    @Param('reservationId', ParseIntPipe) reservationId: number,
+    @Body() dto: UpdateTourReservationStatusDto,
+  ) {
+    return this.toursService.updateReservationStatus(reservationId, dto);
   }
 }

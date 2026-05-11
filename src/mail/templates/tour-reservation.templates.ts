@@ -138,3 +138,64 @@ Este es un correo de prueba enviado desde el API de Curubande Experience.
 ${params.senderName}
 `;
 }
+
+export function getTourReservationAttendanceConfirmationHtml(params: {
+  customerName: string;
+  tourName: string;
+  date: string;
+  confirmUrl: string;
+  senderName: string;
+}): string {
+  const customerName = escapeHtml(params.customerName);
+  const tourName = escapeHtml(params.tourName);
+  const date = escapeHtml(params.date);
+  const confirmUrl = escapeHtml(params.confirmUrl);
+
+  return `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;border:1px solid #eee;border-radius:8px;overflow:hidden">
+        <div style="background:#2d6a4f;padding:28px 24px;text-align:center;">
+          <h2 style="color:#fff;margin:0;font-size:20px;">Confirma tu asistencia</h2>
+        </div>
+        <div style="padding:24px">
+          <p style="font-size:15px;line-height:1.6;color:#333">Hola ${customerName},</p>
+          <p style="font-size:15px;line-height:1.6;color:#333">
+            Mañana tienes programada una experiencia con nosotros. Por favor confirma que asistirás haciendo clic en el botón siguiente.
+          </p>
+          <div style="background:#f4f9f6;border-left:4px solid #2d6a4f;padding:14px;margin:20px 0;font-size:14px;color:#444;">
+            <strong>Tour:</strong> ${tourName}<br/>
+            <strong>Fecha:</strong> ${date}
+          </div>
+          <div style="text-align:center;margin:28px 0">
+            <a href="${confirmUrl}" style="display:inline-block;background:#2d6a4f;color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:bold;font-size:15px;">
+              Confirmar asistencia
+            </a>
+          </div>
+          <p style="font-size:13px;line-height:1.5;color:#666">
+            Si el botón no funciona, copia y pega este enlace en tu navegador:<br/>
+            <span style="word-break:break-all;color:#2d6a4f">${confirmUrl}</span>
+          </p>
+          <p style="color:#666;font-size:13px;margin-top:24px">${escapeHtml(params.senderName)}</p>
+        </div>
+      </div>
+    `;
+}
+
+export function getTourReservationAttendanceConfirmationText(params: {
+  customerName: string;
+  tourName: string;
+  date: string;
+  confirmUrl: string;
+  senderName: string;
+}): string {
+  return `Hola ${params.customerName},
+
+Mañana tienes programada una experiencia con nosotros. Confirma tu asistencia abriendo este enlace:
+
+${params.confirmUrl}
+
+Tour: ${params.tourName}
+Fecha: ${params.date}
+
+${params.senderName}
+`;
+}
